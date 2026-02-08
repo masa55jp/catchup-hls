@@ -5,6 +5,7 @@ FROM debian:bookworm-slim
 
 LABEL maintainer="asakusatv"
 LABEL description="Auto-generate HLS from growing TS files with Intel QSV hardware encoding"
+LABEL org.opencontainers.image.source="https://github.com/masa55jp/catchup-hls"
 
 # Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \

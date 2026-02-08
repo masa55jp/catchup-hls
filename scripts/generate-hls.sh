@@ -2,6 +2,7 @@
 # generate-hls.sh - Generate HLS from a growing TS file using Intel QSV
 
 TS_FILE="$1"
+RECORDING_ID="$2"  # Optional: EPGStation recording ID for symlink
 BASENAME=$(basename "$TS_FILE" .m2ts)
 HLS_DIR="/hls/${BASENAME}"
 
@@ -19,12 +20,20 @@ echo "==================================="
 echo "HLS Generation Started"
 echo "Input: $TS_FILE"
 echo "Output: $HLS_DIR"
+echo "Recording ID: ${RECORDING_ID:-none}"
 echo "Resolution: ${WIDTH}x${HEIGHT}"
 echo "Video: ${VIDEO_BITRATE}, Audio: ${AUDIO_BITRATE}"
 echo "==================================="
 
-# Create output directory
+# Create output directory with proper permissions
 mkdir -p "$HLS_DIR"
+chmod 755 "$HLS_DIR"
+
+# Create symlink if recording ID is provided
+if [ -n "$RECORDING_ID" ]; then
+    ln -sf "$HLS_DIR" "/hls/${RECORDING_ID}"
+    echo "Created symlink: /hls/${RECORDING_ID} -> $HLS_DIR"
+fi
 
 # Check if QSV is available
 USE_QSV=false
@@ -43,18 +52,21 @@ fi
 # Wait for file to have some content
 sleep 3
 
-# Common FFmpeg options for reading growing file
-INPUT_OPTS="-re -fflags +genpts+discardcorrupt -analyzeduration 10M -probesize 10M"
-
 # HLS output options
-HLS_OPTS="-f hls -hls_time ${SEGMENT_TIME} -hls_list_size 0 -hls_flags append_list+delete_segments+omit_endlist"
+HLS_OPTS="-f hls -hls_time ${SEGMENT_TIME} -hls_list_size 0 -hls_flags append_list+omit_endlist"
 HLS_OPTS="${HLS_OPTS} -hls_segment_filename ${HLS_DIR}/segment%05d.ts"
+
+# Use tail -f to follow growing file and pipe to ffmpeg
+# This allows continuous processing as the TS file grows
+echo "Starting continuous HLS generation (following growing file)..."
 
 if [ "$USE_QSV" = true ]; then
     # Intel VA-API hardware encoding
-    ffmpeg $INPUT_OPTS \
+    tail -c +0 -f "$TS_FILE" 2>/dev/null | \
+    ffmpeg -re \
+        -fflags +genpts+discardcorrupt -analyzeduration 10M -probesize 10M \
         -hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format vaapi \
-        -i "$TS_FILE" \
+        -i pipe:0 \
         -vf "format=nv12|vaapi,hwupload,scale_vaapi=w=${WIDTH}:h=${HEIGHT}" \
         -c:v h264_vaapi -b:v "$VIDEO_BITRATE" -maxrate "$VIDEO_BITRATE" -bufsize "${VIDEO_BITRATE%k}0k" \
         -g $((SEGMENT_TIME * 30)) -keyint_min $((SEGMENT_TIME * 30)) \
@@ -65,8 +77,10 @@ if [ "$USE_QSV" = true ]; then
         2>&1 | while read line; do echo "[ffmpeg] $line"; done
 else
     # Software encoding (fallback)
-    ffmpeg $INPUT_OPTS \
-        -i "$TS_FILE" \
+    tail -c +0 -f "$TS_FILE" 2>/dev/null | \
+    ffmpeg -re \
+        -fflags +genpts+discardcorrupt -analyzeduration 10M -probesize 10M \
+        -i pipe:0 \
         -vf "yadif,scale=${WIDTH}:${HEIGHT}" \
         -c:v libx264 -preset veryfast -b:v "$VIDEO_BITRATE" -maxrate "$VIDEO_BITRATE" -bufsize "${VIDEO_BITRATE%k}0k" \
         -g $((SEGMENT_TIME * 30)) -keyint_min $((SEGMENT_TIME * 30)) \

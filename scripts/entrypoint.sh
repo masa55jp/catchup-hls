@@ -26,9 +26,9 @@ fi
 # Create HLS directory if needed
 mkdir -p /hls
 
-# Generate Nginx config from template
-if [ -f /etc/nginx/sites-available/default.template ]; then
-    cp /etc/nginx/sites-available/default.template /etc/nginx/sites-available/default
+# Generate Nginx config from template with EPGStation URL
+if [ -f /etc/nginx/sites-available/default ]; then
+    sed -i "s|EPGSTATION_URL_PLACEHOLDER|${EPGSTATION_URL}|g" /etc/nginx/sites-available/default
 fi
 
 # Update web config with EPGStation URL

@@ -315,8 +315,10 @@
     </div>
 
     <script>
-        // Configuration - will be replaced by entrypoint.sh
-        const EPGSTATION_URL = 'EPGSTATION_URL_PLACEHOLDER';
+        // Configuration
+        // Use local proxy to avoid CORS issues
+        const API_BASE_URL = window.location.origin;
+        const EPGSTATION_URL = 'EPGSTATION_URL_PLACEHOLDER';  // For external links only
         const HLS_BASE_URL = window.location.origin + '/hls';
 
         // Format time
@@ -349,10 +351,10 @@
             });
         }
 
-        // Fetch recordings from EPGStation
+        // Fetch recordings from EPGStation (via local proxy)
         async function fetchRecordings() {
             try {
-                const response = await fetch(`${EPGSTATION_URL}/api/recording?isHalfWidth=false`);
+                const response = await fetch(`${API_BASE_URL}/api/recording?isHalfWidth=false`);
                 if (!response.ok) throw new Error('API error');
                 const data = await response.json();
                 return data.records || [];

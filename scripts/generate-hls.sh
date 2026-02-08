@@ -53,7 +53,8 @@ fi
 sleep 3
 
 # HLS output options
-HLS_OPTS="-f hls -hls_time ${SEGMENT_TIME} -hls_list_size 0 -hls_flags append_list+omit_endlist"
+# Use EVENT playlist type to allow seeking from beginning while still growing
+HLS_OPTS="-f hls -hls_time ${SEGMENT_TIME} -hls_list_size 0 -hls_playlist_type event"
 HLS_OPTS="${HLS_OPTS} -hls_segment_filename ${HLS_DIR}/segment%05d.ts"
 
 # Use tail -f to follow growing file and pipe to ffmpeg

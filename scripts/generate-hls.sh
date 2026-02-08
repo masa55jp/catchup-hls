@@ -63,8 +63,9 @@ echo "Starting continuous HLS generation (following growing file)..."
 
 if [ "$USE_QSV" = true ]; then
     # Intel VA-API hardware encoding
+    # No -re flag: process as fast as possible to catch up, then wait for more data from tail -f
     tail -c +0 -f "$TS_FILE" 2>/dev/null | \
-    ffmpeg -re \
+    ffmpeg \
         -fflags +genpts+discardcorrupt -analyzeduration 10M -probesize 10M \
         -hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format vaapi \
         -i pipe:0 \
@@ -78,8 +79,9 @@ if [ "$USE_QSV" = true ]; then
         2>&1 | while read line; do echo "[ffmpeg] $line"; done
 else
     # Software encoding (fallback)
+    # No -re flag: process as fast as possible to catch up, then wait for more data from tail -f
     tail -c +0 -f "$TS_FILE" 2>/dev/null | \
-    ffmpeg -re \
+    ffmpeg \
         -fflags +genpts+discardcorrupt -analyzeduration 10M -probesize 10M \
         -i pipe:0 \
         -vf "yadif,scale=${WIDTH}:${HEIGHT}" \

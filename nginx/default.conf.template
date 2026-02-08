@@ -1,0 +1,49 @@
+server {
+    listen 80;
+    server_name _;
+
+    # Web UI
+    root /var/www/html;
+    index index.html;
+
+    # HLS files
+    location /hls/ {
+        alias /hls/;
+
+        # CORS headers for cross-origin playback
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'Origin, Content-Type, Accept' always;
+
+        # Cache control for live HLS
+        location ~ \.m3u8$ {
+            add_header 'Access-Control-Allow-Origin' '*' always;
+            add_header 'Cache-Control' 'no-cache, no-store, must-revalidate';
+            add_header 'Pragma' 'no-cache';
+            add_header 'Expires' '0';
+            types {
+                application/vnd.apple.mpegurl m3u8;
+            }
+        }
+
+        location ~ \.ts$ {
+            add_header 'Access-Control-Allow-Origin' '*' always;
+            add_header 'Cache-Control' 'public, max-age=3600';
+            types {
+                video/mp2t ts;
+            }
+        }
+    }
+
+    # Status endpoint
+    location /status {
+        default_type application/json;
+        return 200 '{"status":"ok","service":"catchup-hls"}';
+    }
+
+    # Favicon
+    location = /favicon.ico {
+        log_not_found off;
+        access_log off;
+    }
+}

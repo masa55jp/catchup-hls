@@ -1,0 +1,67 @@
+# catchup-hls - 追っかけ再生用HLS生成
+#
+# UGOS (UGREEN NAS) での使用方法:
+# 1. Docker Compose アプリを作成
+# 2. このファイルの内容を貼り付け
+# 3. 環境に合わせて以下を編集:
+#    - /volume1/jetsonTV/record → TSファイルの保存先
+#    - /volume1/jetsonTV/hls → HLS出力先
+#    - EPGSTATION_URL → JetsonのEPGStation URL
+# 4. 起動
+
+version: '3.8'
+
+services:
+  catchup-hls:
+    # ビルド済みイメージを使う場合
+    # image: ghcr.io/your-username/catchup-hls:latest
+
+    # ローカルビルドの場合
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: catchup-hls
+    restart: unless-stopped
+
+    # Intel QSV用 (GPU アクセス)
+    devices:
+      - /dev/dri:/dev/dri
+
+    volumes:
+      # 録画TSファイル (読み取り専用)
+      - /volume1/jetsonTV/record:/record:ro
+
+      # HLS出力先
+      - /volume1/jetsonTV/hls:/hls
+
+    environment:
+      # EPGStation の URL (Tailscale IP または ローカルIP)
+      - EPGSTATION_URL=http://100.83.73.68:8888
+
+      # タイムゾーン
+      - TZ=Asia/Tokyo
+
+      # HLS設定
+      - HLS_VIDEO_BITRATE=600k      # 映像ビットレート
+      - HLS_AUDIO_BITRATE=128k      # 音声ビットレート
+      - HLS_RESOLUTION=854x480      # 解像度 (480p)
+      - HLS_SEGMENT_TIME=4          # セグメント長 (秒)
+      - HLS_CLEANUP_HOURS=24        # HLS保持時間
+
+    ports:
+      # Web UI と HLS配信
+      - "8080:80"
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -1,5 +1,6 @@
 # catchup-hls - Live Recording HLS Generator with Intel QSV
 # For UGREEN NAS (Intel N100) and other Intel-based systems
+# Build: 2026-02-08
 
 FROM debian:bookworm-slim
 

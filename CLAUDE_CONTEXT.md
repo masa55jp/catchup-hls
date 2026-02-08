@@ -115,7 +115,7 @@ services:
 |------|-----|
 | Jetson Nano IP (Tailscale) | 100.83.73.68 |
 | NAS IP (Tailscale) | 100.86.102.37 |
-| Jetson SSH | masashi@100.83.73.68 (パスワード: yumsake713) |
+| Jetson SSH | masashi@100.83.73.68 |
 | GitHub リポジトリ | https://github.com/masa55jp/catchup-hls |
 | Docker イメージ | ghcr.io/masa55jp/catchup-hls:latest |
 

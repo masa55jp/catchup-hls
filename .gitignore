@@ -14,3 +14,7 @@ Thumbs.db
 # Local test data
 hls/
 record/
+
+# Context documents (may contain credentials)
+CLAUDE_CONTEXT.md
+*_CONTEXT.md
